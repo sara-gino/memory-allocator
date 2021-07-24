@@ -2,23 +2,20 @@
 #include <stddef.h>
 #include "MemoryAllocator.h"
 int main() {
-    char memoryPool[256];
-//    printf("sara");
-    struct MemoryAllocator* a;
-    a=MemoryAllocator_init(memoryPool,(size_t)256);
-    void *f = MemoryAllocator_allocate(a, (size_t) 10);
-    char* m_f=(char*)f;
-    printf("  %d %d %d %d ",(int)m_f[0],(int)m_f[1],(int)m_f[((int)m_f[1])+2],(int)m_f[((int)m_f[1])+3]);
-    void *f2= MemoryAllocator_allocate(a, (size_t) 1);
-    char* m_f2=(char*)f2;
-    printf("  %d %d %d %d %d %d ",(int)m_f2[0],(int)m_f2[1],(int)m_f2[((int)m_f2[1])+2],(int)m_f2[((int)m_f2[1])+3],(int)m_f2[((int)m_f2[1])+3+2],(int)m_f2[((int)m_f2[1])+3+3]);
-//    MemoryAllocator_free(a,m_f2+2);
-    printf("  %d %d %d %d %d %d ",(int)m_f2[0],(int)m_f2[1],(int)m_f2[((int)m_f2[1])+2],(int)m_f2[((int)m_f2[1])+3],(int)m_f2[((int)m_f2[1])+3+2],(int)m_f2[((int)m_f2[1])+3+3]);
-    MemoryAllocator_free(a,m_f2+14);
-    size_t e;
-    printf("  %d %d %d %d %d %d ",(int)m_f2[0],(int)m_f2[1],(int)m_f2[((int)m_f2[1])+2],(int)m_f2[((int)m_f2[1])+3],(int)m_f2[((int)m_f2[1])+3+2],(int)m_f2[((int)m_f2[1])+3+3]);
-    e=MemoryAllocator_optimize(a);
-    printf("  %d %d %d %d %d %d ",(int)m_f2[0],(int)m_f2[1],(int)m_f2[((int)m_f2[1])+2],(int)m_f2[((int)m_f2[1])+3],(int)m_f2[((int)m_f2[1])+3+2],(int)m_f2[((int)m_f2[1])+3+3]);
-    printf("max free block: %zu",e);
-
+    unsigned char memoryPool[256];
+    struct MemoryAllocator* memoryAllocator;
+    size_t max_free;
+    memoryAllocator=MemoryAllocator_init(memoryPool,(size_t)256);
+    void *f = MemoryAllocator_allocate(memoryAllocator, (size_t) 10);
+    memoryAllocator->pointer=MemoryAllocator_release(memoryAllocator);
+    unsigned char* m_f=(unsigned char*)f;
+    void *f2= MemoryAllocator_allocate(memoryAllocator, (size_t) 2);
+    MemoryAllocator_free(memoryAllocator,f2);
+    void* f1= MemoryAllocator_allocate(memoryAllocator, (size_t) 1);
+    void* f10= MemoryAllocator_allocate(memoryAllocator, (size_t) 10);
+    void* f30= MemoryAllocator_allocate(memoryAllocator, (size_t) 30);
+    MemoryAllocator_free(memoryAllocator,f10);
+    MemoryAllocator_free(memoryAllocator,f1);
+    max_free=MemoryAllocator_optimize(memoryAllocator);
+    printf("max free block: %zu",max_free);
 };
