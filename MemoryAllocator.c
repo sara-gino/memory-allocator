@@ -1,68 +1,80 @@
 #include "MemoryAllocator.h"
-#include <stdio.h>
-#include <string.h>
 struct MemoryAllocator MemoryAllocator;
+
 struct MemoryAllocator* MemoryAllocator_init(void* memoryPool,size_t size){
-    char* m_memoryPool=(char*)memoryPool;
+    unsigned char* m_memoryPool=(unsigned char*)memoryPool;
     for (int i=0;i<size;i++){
-        m_memoryPool[i]=(char)0;
+        m_memoryPool[i]=(unsigned char)0;
     }
-    int num=size-191;
-    printf("%d",num);
-    m_memoryPool[1]=(char)num;
-    printf(" %c",(char)num);
-    printf(" %d",(int)(char)num==65);
+    int num=size-2;
+    m_memoryPool[1]=(unsigned char)num;
     MemoryAllocator.pointer=(void*)m_memoryPool;
     MemoryAllocator.size=size;
     return &MemoryAllocator;
 }
 
-void* MemoryAllocator_allocate(struct MemoryAllocator* allocator,size_t size){
-    char* ptr=(char*)allocator->pointer;
-    printf("%d ggg %d",ptr[1],ptr[0]);
-    while(!((int)ptr[0]==0 && (int)ptr[1]>=size)){
-        ptr=ptr+(((int)ptr[1])+2);
+
+void* MemoryAllocator_release(struct MemoryAllocator* allocator){
+    unsigned char* m_memoryPool=(unsigned char*)allocator->pointer;
+    for (int i=0;i<allocator->size;i++){
+        m_memoryPool[i]=(unsigned char)0;
     }
-    ptr[0]=(char)1;
-    int old_val=(int)ptr[1];
-    ptr[1]=(char)size;
-    char *resulte = ptr + 2;
-    if(old_val>size){
-        ptr=ptr+(((int)ptr[1])+2);
-        ptr[0]=(char)0;
-        ptr[1]=(char)(old_val-size-2);
-    }
+    int num=allocator->size-2;
+    m_memoryPool[1]=(unsigned char)num;
     return allocator->pointer;
 }
 
+
+void* MemoryAllocator_allocate(struct MemoryAllocator* allocator,size_t size){
+    char* ptr=(char*)allocator->pointer;
+    while(!((int)ptr[0]==0 && (int)ptr[1]>=size )){
+        if((int)ptr[1]==0 ){
+            return NULL;
+        }
+        ptr=ptr+(((int)ptr[1])+2);
+    }
+    ptr[0]=(char)1;
+    int old_size=(int)ptr[1];
+    ptr[1]=(char)size;
+    char* resulte = ptr + 2;
+    if(old_size>size){
+        ptr=ptr+(((int)ptr[1])+2);
+        ptr[0]=(char)0;
+        ptr[1]=(char)(old_size-size-2);
+    }
+    return resulte;
+}
+
+
 void MemoryAllocator_free(struct MemoryAllocator* allocator, void* ptr){
-    char* pointer=(char*)allocator->pointer;
+    unsigned char* pointer=(unsigned char*)allocator->pointer;
     while (pointer+2!=ptr){
         pointer=pointer+((int)pointer[1])+2;
     }
-    pointer[0]=(char)0;
-    char* next_pointer=pointer+(int)pointer[1]+2;
-    if ((int)next_pointer[0]==0){
-        pointer[1]=(char)((int)pointer[1]+(int)next_pointer[1]+2);
-        next_pointer[1]=(char)0;
+    pointer[0]=(unsigned char)0;
+    unsigned char* next_pointer=pointer+(int)pointer[1]+2;
+    if ((int)next_pointer[0]==0&&(int)next_pointer[1]>0){
+        pointer[1]=(unsigned char)((int)pointer[1]+(int)next_pointer[1]+2);
+        next_pointer[1]=(unsigned char)0;
     }
 }
 
+
 size_t MemoryAllocator_optimize(struct MemoryAllocator* allocator){
-    char* pointer=(char*)allocator->pointer;
-    size_t arr_max=0;
+    unsigned char* pointer=(unsigned char*)allocator->pointer;
+    size_t free_max=0;
     while ((int)pointer[0] != 0) {
         pointer = pointer + (int) pointer[1] + 2;
     }
-    char* next_pointer = pointer + (int) pointer[1] + 2;
+    unsigned char* next_pointer = pointer + (int) pointer[1] + 2;
     while ((int)next_pointer[1]>0) {
-        while ((int) next_pointer[0] == 0 &&(int)next_pointer[1]>0) {
-            pointer[1] = (char)((int)pointer[1]+(int)next_pointer[1]+2);
-            next_pointer[1] = (char) 0;
+        while ((int) next_pointer[0] == 0&&(int)next_pointer[1]>0) {
+            pointer[1] = (unsigned char)((int)pointer[1]+(int)next_pointer[1]+2);
+            next_pointer[1] = (unsigned char) 0;
             next_pointer = next_pointer + (int) next_pointer[1] + 2;
         }
-        if ((size_t)pointer[1] > arr_max) {
-            arr_max = (size_t)pointer[1];
+        if ((size_t)pointer[1] > free_max) {
+            free_max = (size_t)pointer[1];
         }
         pointer = next_pointer;
         while ((int)pointer[0] != 0) {
@@ -70,8 +82,9 @@ size_t MemoryAllocator_optimize(struct MemoryAllocator* allocator){
         }
         next_pointer = pointer + (int) pointer[1] + 2;
     }
-    if ((size_t)pointer[1] > arr_max) {
-        arr_max = (size_t)pointer[1];
+    if ((size_t)pointer[1] > free_max) {
+        free_max = (size_t)pointer[1];
     }
-    return arr_max;
+    return free_max;
 }
+
